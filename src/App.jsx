@@ -5,8 +5,11 @@ import backgroundImage from "./assets/background.webp";
 
 function App() {
   const [playGame, setPlayGame] = useState(false);
+  const [barPosition, setBarPosition] = useState(0);
 
   function playButtonHandle() {
+    setBarPosition(Math.floor(Math.random() * (300 - 80) + 80));
+    console.log(barPosition);
     setPlayGame(!playGame);
   }
 
@@ -15,7 +18,9 @@ function App() {
       className="grid grid-cols-3 grid-rows-[200px_auto_200px] h-screen bg-cover"
       style={{ backgroundImage: `url(${backgroundImage})` }}
     >
-      {playGame && <SkillCheck playGame={playGame}></SkillCheck>}
+      {playGame && (
+        <SkillCheck playGame={playGame} barPosition={barPosition}></SkillCheck>
+      )}
 
       <div className="col-start-2 row-start-3 flex justify-center">
         <button
