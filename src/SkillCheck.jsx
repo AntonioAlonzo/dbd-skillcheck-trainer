@@ -8,15 +8,17 @@ import generatorExplodeSound from "./assets/sfx_generator_explode_02.ogg";
 import successSound from "./assets/sfx_hud_skillcheck_good_01.ogg";
 import barImageRed from "./assets/skillcheck-red.png";
 
-const maxTime = 1960;
-const minTime = 1750;
-
-export default function SkillCheck({ barPosition, handleSkillCheckResult }) {
-  const [timeRemaining, setTimeRemaining] = useState(2);
+export default function SkillCheck({
+  barPosition,
+  handleSkillCheckResult,
+  maxTime,
+  minTime,
+}) {
+  const [timeRemaining, setTimeRemaining] = useState(0);
   const [pressedSpace, setPressedSpace] = useState(false);
-  const [arrowScope, animateArrow] = useAnimate();
   const [barImageBackground, setBarImageBackground] = useState(barImage);
   const [isFinished, setIsFinished] = useState(false);
+  const [arrowScope, animateArrow] = useAnimate();
 
   const arrowAnimation = useRef();
 
@@ -24,7 +26,7 @@ export default function SkillCheck({ barPosition, handleSkillCheckResult }) {
     new Audio(startSound).play();
   }, []);
 
-  useAnimationFrame((time, delta) => {
+  useAnimationFrame((time) => {
     if (time <= maxTime) {
       setTimeRemaining(time);
     }
@@ -34,7 +36,7 @@ export default function SkillCheck({ barPosition, handleSkillCheckResult }) {
     arrowAnimation.current = animateArrow(
       arrowScope.current,
       { rotate: [0, 360] },
-      { duration: 1.7, delay: 1.2 }
+      { duration: 1.7, delay: 1.2, type: "tween" }
     );
   }, []);
 
@@ -44,14 +46,12 @@ export default function SkillCheck({ barPosition, handleSkillCheckResult }) {
 
       if (event.keyCode === 32) {
         arrowAnimation.current.stop();
+        console.log(timeRemaining);
 
         if (timeRemaining < minTime) {
-          new Audio(generatorExplodeSound).play();
-          handleSkillCheckResult(-50);
-          setBarImageBackground(barImageRed);
+          playerLost();
         } else if (timeRemaining < maxTime - 15) {
-          new Audio(successSound).play();
-          handleSkillCheckResult(50);
+          playerWon();
         }
 
         setPressedSpace(true);
@@ -67,19 +67,34 @@ export default function SkillCheck({ barPosition, handleSkillCheckResult }) {
   }, [timeRemaining]);
 
   useEffect(() => {
-    if (maxTime - 15 < timeRemaining && !isFinished) {
+    if (isTimeOver()) {
       arrowAnimation.current.stop();
-      new Audio(generatorExplodeSound).play();
-      handleSkillCheckResult(-50);
-      setBarImageBackground(barImageRed);
+      playerLost();
+      setIsFinished(true);
     }
   }, [timeRemaining]);
+
+  function playerLost() {
+    new Audio(generatorExplodeSound).play();
+    handleSkillCheckResult(-50);
+    setBarImageBackground(barImageRed);
+  }
+
+  function playerWon() {
+    new Audio(successSound).play();
+    handleSkillCheckResult(50);
+  }
+
+  function isTimeOver() {
+    return maxTime - 15 < timeRemaining && !isFinished;
+  }
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ delay: 1 }}
+      exit={{ opacity: 0, y: -30, transition: { duration: 0.3 } }}
       className="col-start-2 row-start-2 flex justify-center items-center flex-col"
     >
       {/* We need to add position:relative to parent div of absolute positioned containers to use width: 100% */}
@@ -93,8 +108,7 @@ export default function SkillCheck({ barPosition, handleSkillCheckResult }) {
           className={`absolute bg-cover w-56 h-56`}
           style={{
             backgroundImage: `url(${barImageBackground})`,
-            /* rotate: `${barPosition}deg`,*/
-            rotate: "200deg",
+            rotate: `${barPosition}deg`,
           }}
         ></div>
 
